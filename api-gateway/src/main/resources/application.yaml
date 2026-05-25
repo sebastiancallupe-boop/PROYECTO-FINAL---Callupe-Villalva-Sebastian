@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: "optional:configserver:http://localhost:8888"
+  cloud:
+    config:
+      fail-fast: true # Si el Config Server está apagado, el Gateway no arranca
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

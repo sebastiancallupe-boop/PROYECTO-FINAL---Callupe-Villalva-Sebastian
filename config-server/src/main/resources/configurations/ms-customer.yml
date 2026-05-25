@@ -1,0 +1,18 @@
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/rapidocourier_db
+    username: postgres
+    password: admin
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+reniec:
+  token: "sk_15202.9S8V0ldPa4Wl1lYZeCKDxNFtnHsOed9i"
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
