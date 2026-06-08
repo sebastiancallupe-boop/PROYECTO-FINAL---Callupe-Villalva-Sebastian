@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RapidoCourier Panel</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">RC</div>
+        <div>
+          <h1>RapidoCourier</h1>
+          <span>Panel operativo</span>
+        </div>
+      </div>
+
+      <nav class="tabs" aria-label="Secciones">
+        <button class="tab active" data-tab="dashboard">Dashboard</button>
+        <button class="tab" data-tab="customers">Clientes</button>
+        <button class="tab" data-tab="shippings">Envios</button>
+        <button class="tab" data-tab="tracking">Tracking</button>
+      </nav>
+
+      <section class="session">
+        <label for="apiBase">Gateway</label>
+        <input id="apiBase" value="http://localhost:8080">
+        <div class="session-user">
+          <strong id="sessionUser">Sin sesion</strong>
+          <span id="sessionRole">JWT requerido</span>
+        </div>
+        <button id="logoutBtn" class="ghost full">Cerrar sesion</button>
+      </section>
+    </aside>
+
+    <main class="content">
+      <section class="topbar">
+        <div>
+          <h2 id="viewTitle">Dashboard</h2>
+          <p id="viewSubtitle">Operacion general de clientes, envios y tracking.</p>
+        </div>
+        <div id="statusPill" class="status-pill">Listo</div>
+      </section>
+
+      <section id="loginPanel" class="panel login-panel">
+        <form id="loginForm" class="grid-form">
+          <div>
+            <label for="username">Usuario</label>
+            <input id="username" name="username" value="admin" autocomplete="username" required>
+          </div>
+          <div>
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" value="Admin123" autocomplete="current-password" required>
+          </div>
+          <button type="submit">Ingresar</button>
+        </form>
+      </section>
+
+      <section id="dashboard" class="view active">
+        <div class="metrics">
+          <article class="metric">
+            <span>Clientes</span>
+            <strong id="customersCount">0</strong>
+          </article>
+          <article class="metric">
+            <span>Envios</span>
+            <strong id="shippingsCount">0</strong>
+          </article>
+          <article class="metric">
+            <span>Registrados</span>
+            <strong id="registeredCount">0</strong>
+          </article>
+          <article class="metric">
+            <span>En ruta</span>
+            <strong id="routeCount">0</strong>
+          </article>
+        </div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Ultimos envios</h3>
+            <button id="refreshDashboardBtn" class="ghost">Actualizar</button>
+          </div>
+          <div id="latestShippings" class="list"></div>
+        </section>
+      </section>
+
+      <section id="customers" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Registrar cliente</h3>
+          </div>
+          <form id="customerForm" class="grid-form">
+            <div>
+              <label for="customerDni">DNI</label>
+              <input id="customerDni" name="dni" maxlength="8" pattern="[0-9]{8}" required>
+            </div>
+            <div>
+              <label for="customerEmail">Email</label>
+              <input id="customerEmail" name="email" type="email" required>
+            </div>
+            <button type="submit">Guardar cliente</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Clientes</h3>
+            <button id="loadCustomersBtn" class="ghost">Actualizar</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>DNI</th>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="customersTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="shippings" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Registrar envio</h3>
+          </div>
+          <form id="shippingForm" class="grid-form wide">
+            <div class="span-2">
+              <label for="shipDescription">Descripcion</label>
+              <input id="shipDescription" name="description" maxlength="150" required>
+            </div>
+            <div>
+              <label for="shipWeight">Peso kg</label>
+              <input id="shipWeight" name="weightKg" type="number" min="0.01" step="0.01" required>
+            </div>
+            <div>
+              <label for="shipValue">Valor declarado</label>
+              <input id="shipValue" name="declaredValue" type="number" min="0" step="0.01" required>
+            </div>
+            <div>
+              <label for="originBranch">Origen</label>
+              <select id="originBranch" name="originBranch" required>
+                <option>Lima</option>
+                <option>Arequipa</option>
+                <option>Cusco</option>
+              </select>
+            </div>
+            <div>
+              <label for="destinationBranch">Destino</label>
+              <select id="destinationBranch" name="destinationBranch" required>
+                <option>Arequipa</option>
+                <option>Lima</option>
+                <option>Cusco</option>
+              </select>
+            </div>
+            <div>
+              <label for="senderDni">DNI remitente</label>
+              <input id="senderDni" name="senderDni" maxlength="8" pattern="[0-9]{8}" required>
+            </div>
+            <div>
+              <label for="recipientDni">DNI destinatario</label>
+              <input id="recipientDni" name="recipientDni" maxlength="8" pattern="[0-9]{8}" required>
+            </div>
+            <button type="submit">Crear envio</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Envios</h3>
+            <div class="actions">
+              <input id="shippingSearch" placeholder="Codigo, DNI o texto">
+              <select id="shippingBranch">
+                <option value="">Todas las sucursales</option>
+                <option>Lima</option>
+                <option>Arequipa</option>
+                <option>Cusco</option>
+              </select>
+              <select id="shippingStatus">
+                <option value="">Todos</option>
+                <option>REGISTRADO</option>
+                <option>EN_TRANSITO</option>
+                <option>EN_REPARTO</option>
+                <option>ENTREGADO</option>
+                <option>CANCELADO</option>
+              </select>
+              <button id="loadShippingsBtn" class="ghost">Buscar</button>
+            </div>
+          </div>
+          <div id="shippingsList" class="list"></div>
+        </section>
+      </section>
+
+      <section id="tracking" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Registrar tracking</h3>
+          </div>
+          <form id="trackingForm" class="grid-form">
+            <div>
+              <label for="trackingShippingId">ID envio</label>
+              <input id="trackingShippingId" name="shippingId" required>
+            </div>
+            <div>
+              <label for="trackingStatus">Estado</label>
+              <input id="trackingStatus" name="status" required>
+            </div>
+            <div>
+              <label for="trackingLocation">Ubicacion</label>
+              <input id="trackingLocation" name="location" required>
+            </div>
+            <button type="submit">Guardar tracking</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Consultar tracking</h3>
+            <div class="actions">
+              <input id="trackingLookupId" placeholder="ID envio">
+              <button id="loadTrackingBtn" class="ghost">Consultar</button>
+            </div>
+          </div>
+          <div id="trackingList" class="list"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js"></script>
+</body>
+</html>

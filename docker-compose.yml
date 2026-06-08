@@ -1,0 +1,185 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rapidocourier-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rapidocourier_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rapidocourier_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  eureka-server:
+    build:
+      context: .
+      args:
+        SERVICE_DIR: eureka-server
+    image: rapidocourier/eureka-server:local
+    container_name: rapidocourier-eureka-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8761 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+
+  config-server:
+    build:
+      context: .
+      args:
+        SERVICE_DIR: config-server
+    image: rapidocourier/config-server:local
+    container_name: rapidocourier-config-server
+    restart: unless-stopped
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    ports:
+      - "8888:8888"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8888/api-gateway/default || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+
+  ms-auth:
+    build:
+      context: .
+      args:
+        SERVICE_DIR: ms-auth
+    image: rapidocourier/ms-auth:local
+    container_name: rapidocourier-ms-auth
+    restart: unless-stopped
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/rapidocourier_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: admin
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  ms-customer:
+    build:
+      context: .
+      args:
+        SERVICE_DIR: ms-customer
+    image: rapidocourier/ms-customer:local
+    container_name: rapidocourier-ms-customer
+    restart: unless-stopped
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/rapidocourier_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: admin
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  ms-shipping:
+    build:
+      context: .
+      args:
+        SERVICE_DIR: ms-shipping
+    image: rapidocourier/ms-shipping:local
+    container_name: rapidocourier-ms-shipping
+    restart: unless-stopped
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/rapidocourier_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: admin
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      ms-customer:
+        condition: service_started
+
+  ms-tracking:
+    build:
+      context: .
+      args:
+        SERVICE_DIR: ms-tracking
+    image: rapidocourier/ms-tracking:local
+    container_name: rapidocourier-ms-tracking
+    restart: unless-stopped
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/rapidocourier_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: admin
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  api-gateway:
+    build:
+      context: .
+      args:
+        SERVICE_DIR: api-gateway
+    image: rapidocourier/api-gateway:local
+    container_name: rapidocourier-api-gateway
+    restart: unless-stopped
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    ports:
+      - "8080:8080"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      ms-auth:
+        condition: service_started
+      ms-customer:
+        condition: service_started
+      ms-shipping:
+        condition: service_started
+      ms-tracking:
+        condition: service_started
+
+  frontend:
+    image: nginx:1.27-alpine
+    container_name: rapidocourier-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      api-gateway:
+        condition: service_started
+
+volumes:
+  postgres-data:
