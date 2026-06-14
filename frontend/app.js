@@ -70,6 +70,9 @@ async function request(path, options = {}) {
 }
 
 function formData(form) {
+  if (!(form instanceof HTMLFormElement)) {
+    throw new Error("Formulario no encontrado");
+  }
   return Object.fromEntries(new FormData(form).entries());
 }
 
@@ -150,11 +153,12 @@ async function createCustomer(event) {
   event.preventDefault();
   setBusy("Guardando");
   try {
+    const form = el("customerForm");
     await request("/api/v1/customers", {
       method: "POST",
-      body: JSON.stringify(formData(event.currentTarget))
+      body: JSON.stringify(formData(form))
     });
-    event.currentTarget.reset();
+    if (form) form.reset();
     toast("Cliente registrado");
     await loadCustomers();
   } catch (error) {
@@ -222,14 +226,17 @@ async function createShipping(event) {
   event.preventDefault();
   setBusy("Creando");
   try {
-    const data = formData(event.currentTarget);
+    const form = event.currentTarget || el("shippingForm");
+    const data = formData(form);
     data.weightKg = Number(data.weightKg);
     data.declaredValue = Number(data.declaredValue);
+
     await request("/api/v1/shippings", {
       method: "POST",
       body: JSON.stringify(data)
     });
-    event.currentTarget.reset();
+
+    form.reset();
     toast("Envio creado");
     await loadShippings();
   } catch (error) {
@@ -285,19 +292,39 @@ async function showHistory(id) {
   }
 }
 
+async function syncShippingStatus(shippingId, newStatus) {
+  const localShipping = state.shippings.find((item) => item.id === shippingId);
+  const shipping = localShipping || (await request(`/api/v1/shippings/${shippingId}`)).data;
+
+  if (!shipping || shipping.status === newStatus) {
+    return;
+  }
+
+  await request(`/api/v1/shippings/${shippingId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ newStatus })
+  });
+}
+
 async function createTracking(event) {
   event.preventDefault();
   setBusy("Tracking");
   try {
+    const form = event.currentTarget || el("trackingForm");
+    const data = formData(form);
+    const shippingId = data.shippingId;
+
+    await syncShippingStatus(shippingId, data.status);
     await request("/api/v1/trackings", {
       method: "POST",
-      body: JSON.stringify(formData(event.currentTarget))
+      body: JSON.stringify(data)
     });
-    const shippingId = el("trackingShippingId").value;
+
     el("trackingLookupId").value = shippingId;
-    event.currentTarget.reset();
+    form.reset();
     toast("Tracking registrado");
     await loadTracking(shippingId);
+    await loadShippings();
   } catch (error) {
     toast(error.message);
   } finally {

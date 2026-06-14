@@ -210,7 +210,13 @@
             </div>
             <div>
               <label for="trackingStatus">Estado</label>
-              <input id="trackingStatus" name="status" required>
+              <select id="trackingStatus" name="status" required>
+                <option>REGISTRADO</option>
+                <option>EN_TRANSITO</option>
+                <option>EN_REPARTO</option>
+                <option>ENTREGADO</option>
+                <option>CANCELADO</option>
+              </select>
             </div>
             <div>
               <label for="trackingLocation">Ubicacion</label>
@@ -235,6 +241,6 @@
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="./app.js"></script>
+  <script src="./app.js?v=20260608-tracking-sync"></script>
 </body>
 </html>
