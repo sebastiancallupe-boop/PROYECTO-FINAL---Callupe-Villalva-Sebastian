@@ -8,8 +8,12 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:admin}
   jpa:
     hibernate:
+    hibernate:
       ddl-auto: update
     show-sql: true
+  sql:
+    init:
+      mode: always
 
 eureka:
   client:
